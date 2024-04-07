@@ -16,5 +16,7 @@ public class Main {
                 "LIMIT 10;";
         Query query2 = QueryParser.parse(sqlQuery);
         System.out.println(query2);
+
+        System.out.println("END");
     }
 }

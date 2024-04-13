@@ -12,7 +12,6 @@ public class Query {
     private Integer limit;
     private Integer offset;
 
-
     public List<String> getColumns() {
         return columns;
     }
@@ -81,7 +80,7 @@ public class Query {
     public String toString() {
         return "Columns: " + getColumns() +
                 "\nFrom sources: " + getFromSources() +
-                "\nWhere clauses: " + getFromSources() +
+                "\nWhere clauses: " + getWhereClauses() +
                 "\nGroup by columns: " + getGroupByColumns() +
                 "\nSort columns: " + getSortColumns() +
                 "\nLimit: " + getLimit() +

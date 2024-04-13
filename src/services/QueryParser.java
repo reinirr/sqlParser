@@ -1,8 +1,10 @@
 package services;
 
 import Entity.Query;
+import Entity.WhereClause;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,7 +15,7 @@ public class QueryParser {
 
         Pattern selectPattern = Pattern.compile("SELECT (.+?) FROM", Pattern.CASE_INSENSITIVE);
         Pattern fromPattern = Pattern.compile("FROM (.+?)(?: WHERE| GROUP BY| ORDER BY| LIMIT| OFFSET|$)", Pattern.CASE_INSENSITIVE);
-        Pattern wherePattern = Pattern.compile("WHERE (.+?)(?: GROUP BY| ORDER BY| LIMIT| OFFSET|$)", Pattern.CASE_INSENSITIVE);
+        Pattern wherePattern = Pattern.compile("(?:WHERE|HAVING) (.+?)(?: GROUP BY| ORDER BY| LIMIT| OFFSET|$)", Pattern.CASE_INSENSITIVE);
         Pattern groupByPattern = Pattern.compile("GROUP BY (.+?)(?: ORDER BY| LIMIT| OFFSET|$)", Pattern.CASE_INSENSITIVE);
         Pattern orderByPattern = Pattern.compile("ORDER BY (.+?)(?: LIMIT| OFFSET|$)", Pattern.CASE_INSENSITIVE);
         Pattern limitPattern = Pattern.compile("LIMIT (\\d+)", Pattern.CASE_INSENSITIVE);
@@ -42,6 +44,12 @@ public class QueryParser {
         if (orderByMatcher.find()) {
             String orderByFields = orderByMatcher.group(1);
             query.setSortColumns(parseSortColumns(orderByFields));
+        }
+
+        Matcher whereMatcher = wherePattern.matcher(sqlQuery);
+        if (whereMatcher.find()) {
+            String whereFields = whereMatcher.group(1);
+            query.setWhereClauses(parseWhereClauses(whereFields));
         }
 
         Matcher limitMatcher = limitPattern.matcher(sqlQuery);
@@ -77,11 +85,24 @@ public class QueryParser {
         return sourcesList;
     }
 
-    private static List<String> parseWhereClauses(String whereClauses) {
-        var whereClausesArray = whereClauses.split(",");
-        List<String> clauses = new ArrayList<>();
+    private static List<WhereClause> parseWhereClauses(String whereClauses) {
+        var whereClausesArray = whereClauses.split("\\s*(?:AND|,|OR)\\s*");
+        List<WhereClause> clauses = new ArrayList<>();
         for (String clause : whereClausesArray) {
-            clauses.add(clause.trim());
+            String[] clauseParts = clause.split("\\s*(?<=(?:!=|=|>|<|>=|<=))\\s*|\\s*(?=(?:!=|=|>|<|>=|<=))");
+            clauseParts = Arrays.stream(clauseParts)
+                    .map(String::trim)
+                    .filter(str -> !str.isEmpty())
+                    .toArray(String[]::new);
+            if (clauseParts.length != 3) {
+                // обрабатываем неправильно отформатированные клозы, бросаем исключение или выполняем другие действия
+                // например, можно внести запись в журнал и продолжить обработку остальных клозов
+                continue; // пропускаем текущий цикл и переходим к следующему
+            }
+            String column = clauseParts[0].trim();
+            String operator = clauseParts[1];
+            String value = clauseParts[2];
+            clauses.add(new WhereClause(column, operator, value));
         }
         return clauses;
     }

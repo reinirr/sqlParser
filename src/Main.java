@@ -12,7 +12,7 @@ public class Main {
                 "FROM author " +
                 "LEFT JOIN book ON (author.id = book.author_id) " +
                 "GROUP BY author.name " +
-                "HAVING COUNT(*) > 1 AND SUM(book.cost) > 500" +
+                "HAVING COUNT(*) > 1 AND SUM(book.cost) > 500 " +
                 "LIMIT 10;";
         Query query2 = QueryParser.parse(sqlQuery);
         System.out.println(query2);
